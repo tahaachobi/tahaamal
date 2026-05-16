@@ -1,0 +1,375 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id         String    @id @default(cuid())
+  name       String
+  email      String    @unique
+  emailVerifiedAt DateTime?
+  googleId   String?   @unique
+  phone      String?   @unique
+  password   String
+  role       Role      @default(CLIENT)
+  profileCompletedAt DateTime?
+  loyaltyPoints Int    @default(0)
+  trustStars  Int      @default(5)
+  salonId    String?
+  salon      Salon?    @relation("SalonStaff", fields: [salonId], references: [id], onDelete: SetNull)
+  ownedSalon Salon?    @relation("SalonOwner")
+  bookings   Booking[]
+  staffBookings Booking[] @relation("BookingStaff")
+  staffSessions StaffSession[]
+  notifications Notification[]
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([salonId])
+}
+
+model VerificationCode {
+  id         String                  @id @default(cuid())
+  email      String
+  purpose    VerificationCodePurpose @default(SIGNUP)
+  codeHash   String
+  expiresAt  DateTime
+  verifiedAt DateTime?
+  usedAt     DateTime?
+  createdAt  DateTime                @default(now())
+
+  @@index([email, purpose, createdAt])
+  @@index([expiresAt])
+}
+
+model Salon {
+  id           String    @id @default(cuid())
+  name         String
+  slug         String    @unique
+  logo         String?
+  address      String?
+  city         String?
+  latitude     Float?
+  longitude    Float?
+  contactPhone String?
+  whatsappPhone String?
+  workingHours Json
+  services     Service[]
+  bookings     Booking[]
+  promoCodes   PromoCode[]
+  ownerId      String    @unique
+  owner        User      @relation("SalonOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  staff        User[]    @relation("SalonStaff")
+  resources    Resource[]
+  cashSessions CashSession[]
+  staffSessions StaffSession[]
+  products     Product[]
+  suppliers    Supplier[]
+  purchaseOrders PurchaseOrder[]
+  auditLogs    AuditLog[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Service {
+  id            String    @id @default(cuid())
+  name          String
+  description   String?
+  price         Float
+  duration      Int
+  loyaltyPoints Int      @default(0)
+  salonId       String
+  salon         Salon     @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  bookings      Booking[]
+  consumptions  ServiceConsumption[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([salonId])
+  @@unique([salonId, name])
+}
+
+model Booking {
+  id              String        @id @default(cuid())
+  userId          String
+  salonId         String
+  serviceId       String
+  promoCodeId     String?
+  date            DateTime
+  startTime       String
+  endTime         String
+  status          BookingStatus @default(PENDING)
+  clientConfirmationStage ClientConfirmationStage @default(AWAITING_FIRST_CONFIRMATION)
+  firstConfirmationSentAt DateTime?
+  firstConfirmedAt DateTime?
+  reminderSentAt DateTime?
+  finalConfirmedAt DateTime?
+  originalPrice   Float         @default(0)
+  discountAmount  Float         @default(0)
+  finalPrice      Float         @default(0)
+  appliedPromoCode String?
+  resourceId      String?
+  staffId         String?
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  salon           Salon         @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  service         Service       @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  promoCode       PromoCode?    @relation(fields: [promoCodeId], references: [id], onDelete: SetNull)
+  resource        Resource?     @relation(fields: [resourceId], references: [id], onDelete: SetNull)
+  staff           User?         @relation("BookingStaff", fields: [staffId], references: [id], onDelete: SetNull)
+  transaction     Transaction?
+  notifications   Notification[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([userId, date])
+  @@index([salonId, date])
+  @@index([serviceId, date])
+  @@index([promoCodeId])
+  @@index([resourceId])
+  @@index([staffId])
+}
+
+model PromoCode {
+  id               String    @id @default(cuid())
+  salonId          String
+  code             String
+  type             PromoType
+  value            Float
+  isActive         Boolean   @default(true)
+  startsAt         DateTime?
+  endsAt           DateTime?
+  usageLimit       Int?
+  oneTimePerClient Boolean   @default(false)
+  salon            Salon     @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  bookings         Booking[]
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([salonId, isActive])
+  @@unique([salonId, code])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  bookingId String?
+  type      NotificationType
+  title     String
+  message   String
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  booking   Booking?         @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([bookingId, createdAt])
+}
+
+enum Role {
+  CLIENT
+  SALON_OWNER
+  ADMIN
+  CASHIER
+  STAFF
+  STOCK_MANAGER
+}
+
+enum BookingStatus {
+  PENDING
+  ACCEPTED
+  CONFIRMED
+  ARRIVING
+  IN_SERVICE
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum ClientConfirmationStage {
+  AWAITING_FIRST_CONFIRMATION
+  FIRST_CONFIRMED
+  AWAITING_FINAL_CONFIRMATION
+  FINAL_CONFIRMED
+  RESCHEDULE_REQUESTED
+}
+
+enum PromoType {
+  PERCENTAGE
+  FIXED
+}
+
+enum NotificationType {
+  BOOKING_CREATED
+  BOOKING_STATUS
+  BOOKING_REMINDER
+  CLIENT_CONFIRMATION
+  RESCHEDULE_REQUEST
+  LOYALTY_UPDATE
+}
+
+enum VerificationCodePurpose {
+  SIGNUP
+}
+
+model Resource {
+  id        String   @id @default(cuid())
+  name      String
+  type      String   // e.g. "CHAIR", "ROOM", "BED", "STATION"
+  status    String   @default("FREE") // "FREE", "BUSY", "CLEANING", "MAINTENANCE"
+  salonId   String
+  salon     Salon    @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  bookings  Booking[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([salonId, name])
+  @@index([salonId])
+}
+
+model StaffSession {
+  id        String    @id @default(cuid())
+  staffId   String
+  salonId   String
+  clockIn   DateTime  @default(now())
+  clockOut  DateTime?
+  status    String    @default("ON_DUTY") // "ON_DUTY", "ON_BREAK", "OFF_DUTY"
+  staff     User      @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  salon     Salon     @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([staffId])
+  @@index([salonId])
+}
+
+model CashSession {
+  id          String   @id @default(cuid())
+  salonId     String
+  openedAt    DateTime @default(now())
+  closedAt    DateTime?
+  openingFloat Float
+  totalCash   Float    @default(0)
+  totalCard   Float    @default(0)
+  status      String   @default("OPEN") // "OPEN", "CLOSED"
+  movements   CashMovement[]
+  transactions Transaction[]
+  salon       Salon    @relation(fields: [salonId], references: [id], onDelete: Cascade)
+}
+
+model CashMovement {
+  id        String   @id @default(cuid())
+  sessionId String
+  type      String   // "IN", "OUT"
+  amount    Float
+  note      String?
+  createdAt DateTime @default(now())
+  session   CashSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
+
+model Transaction {
+  id        String   @id @default(cuid())
+  sessionId String
+  bookingId String?  @unique
+  method    String   // "CASH", "CARD"
+  amount    Float
+  createdAt DateTime @default(now())
+  session   CashSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  booking   Booking?  @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  invoice   Invoice?
+}
+
+model Invoice {
+  id            String   @id @default(cuid())
+  transactionId String   @unique
+  number        String   @unique
+  totalAmount   Float
+  pdfUrl        String?
+  createdAt     DateTime @default(now())
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  category    String   @default("General")
+  sku         String?
+  quantity    Int      @default(0)
+  minStock    Int      @default(5)
+  unitPrice   Float    @default(0)
+  salonId     String
+  salon       Salon    @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  supplierId  String?
+  supplier    Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  consumptions ServiceConsumption[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([salonId])
+  @@unique([salonId, sku])
+}
+
+model Supplier {
+  id          String   @id @default(cuid())
+  name        String
+  email       String?
+  phone       String?
+  address     String?
+  notes       String?
+  salonId     String
+  salon       Salon    @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  products    Product[]
+  orders      PurchaseOrder[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([salonId])
+}
+
+model PurchaseOrder {
+  id          String   @id @default(cuid())
+  orderNumber String   @unique
+  status      String   @default("PENDING") // "PENDING", "ORDERED", "SHIPPED", "DELIVERED", "CANCELLED"
+  totalAmount Float    @default(0)
+  notes       String?
+  salonId     String
+  supplierId  String
+  salon       Salon    @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  supplier    Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([salonId])
+  @@index([supplierId])
+}
+
+model ServiceConsumption {
+  id        String   @id @default(cuid())
+  serviceId String
+  productId String
+  quantity  Int      // Amount consumed (e.g. 10ml or 1 unit)
+  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([serviceId])
+  @@index([productId])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  entity    String
+  entityId  String?
+  details   String?
+  userId    String?
+  salonId   String
+  salon     Salon    @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([salonId, createdAt])
+  @@index([entity, entityId])
+}

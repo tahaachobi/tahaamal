@@ -1,0 +1,40 @@
+(node:7592) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Phone login check failed error: Failed to identify your database: A server error occurred. Please contact Prisma support if the problem persists.
+    at D:\Form\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async PrismaPgAdapter.performIO (webpack-internal:///(rsc)/./node_modules/@prisma/adapter-pg/dist/index.mjs:629:22)
+    at async PrismaPgAdapter.queryRaw (webpack-internal:///(rsc)/./node_modules/@prisma/adapter-pg/dist/index.mjs:579:30)
+    at async e.interpretNode (D:\Form\node_modules\@prisma\client\runtime\client.js:11:44621)
+    at async e.interpretNode (D:\Form\node_modules\@prisma\client\runtime\client.js:11:45065)
+    at async e.interpretNode (D:\Form\node_modules\@prisma\client\runtime\client.js:11:46285)
+    at async e.run (D:\Form\node_modules\@prisma\client\runtime\client.js:11:43335)
+    at async e.execute (D:\Form\node_modules\@prisma\client\runtime\client.js:57:815)
+    at async jt.request (D:\Form\node_modules\@prisma\client\runtime\client.js:58:2401)
+    at async Object.singleLoader (D:\Form\node_modules\@prisma\client\runtime\client.js:65:6569) {
+  length: 120,
+  severity: undefined,
+  code: undefined,
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: undefined,
+  line: undefined,
+  routine: undefined,
+  clientVersion: '7.8.0'
+}

@@ -1,0 +1,45 @@
+
+> saas-booking-system@0.1.0 dev
+> next dev
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+  - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 2.1s
+ ○ Compiling /login ...
+ ✓ Compiled /login in 2.5s (897 modules)
+ GET /login 200 in 3009ms
+ ✓ Compiled in 509ms (313 modules)
+ GET /login 200 in 51ms
+ GET /login 200 in 50ms
+ ✓ Compiled /api/auth/check-phone in 321ms (610 modules)
+ POST /api/auth/check-phone 400 in 391ms
+ POST /api/auth/check-phone 500 in 1240ms
+ ✓ Compiled in 296ms (923 modules)
+ GET /login 200 in 124ms
+ POST /api/auth/check-phone 500 in 422ms
+ GET /login 200 in 61ms
+ ○ Compiling /register ...
+ ✓ Compiled /register in 928ms (952 modules)
+ GET /login 200 in 91ms
+ GET /login 200 in 46ms
+ GET /_next/static/css/app/layout.css?v=1778371392455 404 in 22ms
+ GET /_next/static/chunks/app/error.js 404 in 40ms
+ GET /_next/static/chunks/app-pages-internals.js 404 in 41ms
+ GET /_next/static/chunks/app/login/page.js 404 in 42ms
+ GET /_next/static/chunks/main-app.js?v=1778371392455 404 in 46ms
+ GET /favicon.ico 200 in 12ms
+ GET /login 200 in 62ms
+ GET /_next/static/css/app/layout.css?v=1778371394096 404 in 36ms
+ GET /_next/static/chunks/main-app.js?v=1778371394096 404 in 41ms
+ GET /_next/static/chunks/app-pages-internals.js 404 in 41ms
+ GET /_next/static/chunks/app/login/page.js 404 in 41ms
+ GET /_next/static/chunks/app/error.js 404 in 42ms
+ GET /login 200 in 78ms
+ GET /_next/static/css/app/layout.css?v=1778371440397 404 in 57ms
+ GET /_next/static/chunks/main-app.js?v=1778371440397 404 in 35ms
+ GET /_next/static/chunks/app-pages-internals.js 404 in 34ms
+ GET /_next/static/chunks/app/login/page.js 404 in 26ms
+ GET /_next/static/chunks/app/error.js 404 in 26ms
