@@ -206,12 +206,7 @@ export const authOptions: NextAuthOptions = {
           typeof token.id === "string" ? token.id : token.sub ?? "";
         session.user.phone =
           typeof token.phone === "string" ? token.phone : null;
-        session.user.role =
-          token.role === "CLIENT" ||
-          token.role === "SALON_OWNER" ||
-          token.role === "ADMIN"
-            ? token.role
-            : "CLIENT";
+        session.user.role = token.role || "CLIENT";
         session.user.salonId =
           typeof token.salonId === "string" ? token.salonId : null;
         session.user.profileCompleted = Boolean(token.profileCompleted);

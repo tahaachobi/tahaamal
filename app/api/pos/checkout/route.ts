@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { validateTenantContext } from "@/lib/modules/auth/tenant-guard";
 import { NotificationType, Role } from "@/app/generated/prisma/enums";
 import { NextResponse } from "next/server";
 import { createNotifications } from "@/lib/booking-communication";
@@ -31,24 +31,19 @@ function parseMoney(value: unknown) {
 
 export async function POST(req: Request) {
   try {
-    const session = await auth();
-
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    if (
-      session.user.role !== Role.SALON_OWNER &&
-      session.user.role !== Role.CASHIER
-    ) {
-      return NextResponse.json(
-        { error: "Only owners and cashiers can process checkout." },
-        { status: 403 },
-      );
-    }
-
     const body = (await req.json()) as CheckoutPayload;
     const salonId = typeof body.salonId === "string" ? body.salonId.trim() : "";
+
+    const authResult = await validateTenantContext(
+      [Role.SALON_OWNER, Role.CASHIER, Role.ADMIN],
+      salonId
+    );
+
+    if (authResult.error) {
+      return NextResponse.json({ error: authResult.error }, { status: authResult.status || 400 });
+    }
+
+    const context = authResult.context!;
     const clientId =
       typeof body.clientId === "string" && body.clientId.trim()
         ? body.clientId.trim()
@@ -200,7 +195,7 @@ export async function POST(req: Request) {
               entity: "User",
               entityId: client.id,
               salonId,
-              userId: session.user.id,
+              userId: context.userId,
             },
           });
         }

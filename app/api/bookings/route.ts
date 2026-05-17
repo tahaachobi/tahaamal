@@ -7,6 +7,7 @@ import {
   NotificationType,
 } from "@/app/generated/prisma/enums";
 import { auth } from "@/auth";
+import { dispatchLunaEvent, LunaEvent } from "@/lib/events/event-dispatcher";
 import {
   createNotifications,
 } from "@/lib/booking-communication";
@@ -226,6 +227,15 @@ export async function POST(request: Request) {
         isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
       },
     );
+
+    dispatchLunaEvent(LunaEvent.BookingCreated, {
+      bookingId: booking.id,
+      salonId: salon.id,
+      userId: session.user.id,
+      serviceName: booking.service.name,
+      price: booking.finalPrice,
+      dateTime: dateInput + " " + booking.startTime,
+    });
 
     revalidatePath("/dashboard");
     revalidatePath(`/salon/${salon.slug}`);

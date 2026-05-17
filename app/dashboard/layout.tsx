@@ -13,7 +13,23 @@ export default async function DashboardLayout({
 
   if (!session?.user) redirect("/login?callbackUrl=%2Fdashboard");
   if (!session.user.profileCompleted) redirect("/complete-profile?next=%2Fdashboard");
-  if (session.user.role !== Role.SALON_OWNER) redirect("/unauthorized");
+  const allowedDashboardRoles: Role[] = [
+    Role.ADMIN,
+    Role.SALON_OWNER,
+    Role.CASHIER,
+    Role.STAFF,
+    Role.STOCK_MANAGER,
+  ];
+
+  if (!allowedDashboardRoles.includes(session.user.role)) {
+    redirect("/unauthorized");
+  }
+
+  const role = session.user.role;
+  const isOwnerOrAdmin = role === Role.SALON_OWNER || role === Role.ADMIN;
+  const isCashier = role === Role.CASHIER;
+  const isStaff = role === Role.STAFF;
+  const isStockManager = role === Role.STOCK_MANAGER;
 
   return (
     <div className="luna-shell">
@@ -45,60 +61,84 @@ export default async function DashboardLayout({
 
         {/* Nav */}
         <nav className="luna-sidebar-nav">
-          <p className="luna-nav-section">Main</p>
+          {/* Main Section */}
+          {(isOwnerOrAdmin || isCashier) && (
+            <>
+              <p className="luna-nav-section">Main</p>
 
-          <Link href="/dashboard" className="luna-nav-item active">
-            <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" />
-              <rect x="14" y="14" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" />
-            </svg>
-            Dashboard
-          </Link>
+              <Link href="/dashboard" className="luna-nav-item active">
+                <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" />
+                  <rect x="14" y="14" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" />
+                </svg>
+                Dashboard
+              </Link>
+            </>
+          )}
 
-          <Link href="/dashboard/bookings" className="luna-nav-item">
-            <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="3" y="4" width="18" height="18" rx="2" />
-              <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" />
-              <line x1="3" y1="10" x2="21" y2="10" />
-            </svg>
-            Bookings
-          </Link>
+          {/* Bookings Section (Available for Cashier, Staff, Owner, Admin) */}
+          {(isOwnerOrAdmin || isCashier || isStaff) && (
+            <>
+              {!(isOwnerOrAdmin || isCashier) && <p className="luna-nav-section">Main</p>}
+              <Link href="/dashboard/bookings" className="luna-nav-item">
+                <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                {isStaff ? "My Queue" : "Bookings"}
+              </Link>
+            </>
+          )}
 
-          <Link href="/dashboard/pos" className="luna-nav-item">
-            <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="2" y="3" width="20" height="14" rx="2" />
-              <path d="M8 21h8M12 17v4" />
-            </svg>
-            POS / Caisse
-          </Link>
+          {/* POS / Caisse Section */}
+          {(isOwnerOrAdmin || isCashier) && (
+            <Link href="/dashboard/pos" className="luna-nav-item">
+              <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="2" y="3" width="20" height="14" rx="2" />
+                <path d="M8 21h8M12 17v4" />
+              </svg>
+              POS / Caisse
+            </Link>
+          )}
 
-          <p className="luna-nav-section">Business</p>
+          {/* Business Section */}
+          {(isOwnerOrAdmin || isCashier || isStaff) && (
+            <>
+              <p className="luna-nav-section">Business</p>
 
-          <Link href="/dashboard/staff" className="luna-nav-item">
-            <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="9" cy="7" r="4" /><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2" />
-              <circle cx="19" cy="11" r="2" /><path d="M22 20v-1a2 2 0 00-2-2h-1" />
-            </svg>
-            Staff
-          </Link>
+              {isOwnerOrAdmin && (
+                <Link href="/dashboard/staff" className="luna-nav-item">
+                  <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="9" cy="7" r="4" /><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2" />
+                    <circle cx="19" cy="11" r="2" /><path d="M22 20v-1a2 2 0 00-2-2h-1" />
+                  </svg>
+                  Staff Management
+                </Link>
+              )}
 
-          <Link href="/dashboard/clients" className="luna-nav-item">
-            <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="8" r="4" />
-              <path d="M4 20v-1a8 8 0 0116 0v1" />
-            </svg>
-            Clients (CRM)
-          </Link>
+              {(isOwnerOrAdmin || isCashier) && (
+                <Link href="/dashboard/clients" className="luna-nav-item">
+                  <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="8" r="4" />
+                    <path d="M4 20v-1a8 8 0 0116 0v1" />
+                  </svg>
+                  Clients (CRM)
+                </Link>
+              )}
 
-          <Link href="/dashboard/resources" className="luna-nav-item">
-            <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="3" y="11" width="18" height="11" rx="1" />
-              <path d="M7 11V7a5 5 0 0110 0v4" />
-            </svg>
-            Resources
-          </Link>
+              <Link href="/dashboard/resources" className="luna-nav-item">
+                <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="11" width="18" height="11" rx="1" />
+                  <path d="M7 11V7a5 5 0 0110 0v4" />
+                </svg>
+                Chairs & Stations
+              </Link>
+            </>
+          )}
 
-          {session.user.role === Role.SALON_OWNER && (
+          {/* Finance Section */}
+          {isOwnerOrAdmin && (
             <>
               <p className="luna-nav-section">Finance</p>
 
@@ -107,14 +147,21 @@ export default async function DashboardLayout({
                   <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" />
                   <line x1="6" y1="20" x2="6" y2="14" />
                 </svg>
-                Analytics
+                Analytics & Reports
               </Link>
+            </>
+          )}
+
+          {/* Inventory Section (Available for Owner, Admin, and Stock Manager) */}
+          {(isOwnerOrAdmin || isStockManager) && (
+            <>
+              <p className="luna-nav-section">Supply Chain</p>
 
               <Link href="/dashboard/inventory" className="luna-nav-item">
                 <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
                 </svg>
-                Inventory
+                Inventory Stock
               </Link>
 
               <Link href="/dashboard/suppliers" className="luna-nav-item">
@@ -122,9 +169,14 @@ export default async function DashboardLayout({
                   <rect x="2" y="7" width="20" height="14" rx="2" />
                   <path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2" />
                 </svg>
-                Suppliers
+                Suppliers Directory
               </Link>
+            </>
+          )}
 
+          {/* Settings Section */}
+          {isOwnerOrAdmin && (
+            <>
               <p className="luna-nav-section">Settings</p>
 
               <Link href="/dashboard/promotions" className="luna-nav-item">
@@ -143,7 +195,7 @@ export default async function DashboardLayout({
                   <circle cx="12" cy="12" r="3" />
                   <path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14" />
                 </svg>
-                Settings
+                Salon Settings
               </Link>
             </>
           )}
