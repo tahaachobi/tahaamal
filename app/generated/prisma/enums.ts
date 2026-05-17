@@ -1,0 +1,63 @@
+// Browser-safe and Server-safe Static Enums for Luna OS
+// This allows Client Components to import enums without bundling node:fs/events.
+
+export enum Role {
+  CLIENT = "CLIENT",
+  SALON_OWNER = "SALON_OWNER",
+  ADMIN = "ADMIN",
+  CASHIER = "CASHIER",
+  STAFF = "STAFF",
+  STOCK_MANAGER = "STOCK_MANAGER"
+}
+
+export enum BookingStatus {
+  PENDING = "PENDING",
+  ACCEPTED = "ACCEPTED",
+  CONFIRMED = "CONFIRMED",
+  ARRIVING = "ARRIVING",
+  IN_SERVICE = "IN_SERVICE",
+  CANCELLED = "CANCELLED",
+  COMPLETED = "COMPLETED",
+  NO_SHOW = "NO_SHOW"
+}
+
+export enum ClientConfirmationStage {
+  AWAITING_FIRST_CONFIRMATION = "AWAITING_FIRST_CONFIRMATION",
+  FIRST_CONFIRMED = "FIRST_CONFIRMED",
+  AWAITING_FINAL_CONFIRMATION = "AWAITING_FINAL_CONFIRMATION",
+  FINAL_CONFIRMED = "FINAL_CONFIRMED",
+  RESCHEDULE_REQUESTED = "RESCHEDULE_REQUESTED"
+}
+
+export enum PromoType {
+  PERCENTAGE = "PERCENTAGE",
+  FIXED = "FIXED"
+}
+
+export enum NotificationType {
+  BOOKING_CREATED = "BOOKING_CREATED",
+  BOOKING_STATUS = "BOOKING_STATUS",
+  BOOKING_REMINDER = "BOOKING_REMINDER",
+  CLIENT_CONFIRMATION = "CLIENT_CONFIRMATION",
+  RESCHEDULE_REQUEST = "RESCHEDULE_REQUEST",
+  LOYALTY_UPDATE = "LOYALTY_UPDATE"
+}
+
+export enum VerificationCodePurpose {
+  SIGNUP = "SIGNUP"
+}
+
+export enum SubscriptionStatus {
+  TRIAL = "TRIAL",
+  ACTIVE = "ACTIVE",
+  PAST_DUE = "PAST_DUE",
+  EXPIRED = "EXPIRED",
+  GRACE_PERIOD = "GRACE_PERIOD"
+}
+
+export enum ChairState {
+  RESERVED = "RESERVED",
+  STARTED = "STARTED",
+  PAUSED = "PAUSED",
+  COMPLETED = "COMPLETED"
+}
