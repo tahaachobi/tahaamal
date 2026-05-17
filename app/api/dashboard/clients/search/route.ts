@@ -4,6 +4,8 @@ import prisma from "@/lib/prisma";
 import { validateTenantContext } from "@/lib/modules/auth/tenant-guard";
 import { rateLimit } from "@/lib/rate-limit";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
