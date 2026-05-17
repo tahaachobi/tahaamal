@@ -30,6 +30,7 @@ import {
   sendBookingReceiptWhatsApp,
   sendOwnerBookingAlertWhatsApp,
 } from "@/lib/whatsapp";
+import { rateLimit } from "@/lib/rate-limit";
 
 type BookingPayload = {
   date?: string;
@@ -47,6 +48,10 @@ function normalizeStartTime(value: unknown) {
 }
 
 export async function POST(request: Request) {
+  const ip = request.headers.get("x-forwarded-for") || "127.0.0.1";
+  const limitResponse = rateLimit(ip, "booking_create", { limit: 5, intervalMs: 60000 });
+  if (limitResponse) return limitResponse;
+
   const session = await auth();
 
   if (!session?.user?.id) {
