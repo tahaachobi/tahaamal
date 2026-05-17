@@ -5,6 +5,8 @@ import {
   BookingStatus,
   ClientConfirmationStage,
   NotificationType,
+  ChairState,
+  Role,
 } from "@/app/generated/prisma/enums";
 import { auth } from "@/auth";
 import { dispatchLunaEvent, LunaEvent } from "@/lib/events/event-dispatcher";
@@ -156,6 +158,87 @@ export async function POST(request: Request) {
           );
         }
 
+        // ─── BOOKING CONCURRENCY ENGINE & ALLOCATION ───
+        // 1. Fetch styling stations (chairs)
+        const resources = await transaction.resource.findMany({
+          where: {
+            salonId: salon.id,
+            type: "CHAIR",
+          },
+          select: {
+            id: true,
+            name: true,
+          },
+        });
+
+        if (resources.length === 0) {
+          throw new BookingValidationError(
+            "No active styling chairs or stations are configured in this salon yet."
+          );
+        }
+
+        // 2. Fetch salon stylists
+        const stylists = await transaction.user.findMany({
+          where: {
+            salonId: salon.id,
+            role: Role.STAFF,
+          },
+          select: {
+            id: true,
+            name: true,
+          },
+        });
+
+        if (stylists.length === 0) {
+          throw new BookingValidationError(
+            "No stylists are registered or active in this salon yet."
+          );
+        }
+
+        // 3. Query overlapping active bookings
+        const activeOverlappingBookings = await transaction.booking.findMany({
+          where: {
+            salonId: salon.id,
+            date: bookingDate,
+            status: {
+              not: BookingStatus.CANCELLED,
+            },
+            OR: [
+              {
+                startTime: { lt: selectedSlot.endTime },
+                endTime: { gt: selectedSlot.startTime },
+              },
+            ],
+          },
+          select: {
+            resourceId: true,
+            staffId: true,
+          },
+        });
+
+        // 4. Determine busy entities and exclude them
+        const occupiedResourceIds = new Set(
+          activeOverlappingBookings.map((b) => b.resourceId).filter(Boolean)
+        );
+        const busyStaffIds = new Set(
+          activeOverlappingBookings.map((b) => b.staffId).filter(Boolean)
+        );
+
+        const availableResource = resources.find((r) => !occupiedResourceIds.has(r.id));
+        const availableStaff = stylists.find((s) => !busyStaffIds.has(s.id));
+
+        if (!availableResource) {
+          throw new BookingConflictError(
+            "All styling chairs and stations are fully occupied during this slot. Please choose another time."
+          );
+        }
+
+        if (!availableStaff) {
+          throw new BookingConflictError(
+            "All salon stylists are fully booked during this slot. Please choose another time."
+          );
+        }
+
         const promoResult = await resolveApplicablePromoCode({
           client: transaction,
           code: promoCode,
@@ -189,6 +272,8 @@ export async function POST(request: Request) {
             startTime: selectedSlot.startTime,
             status: BookingStatus.PENDING,
             userId: session.user.id,
+            resourceId: availableResource.id,
+            staffId: availableStaff.id,
           },
           include: {
             service: {
@@ -201,6 +286,17 @@ export async function POST(request: Request) {
                 code: true,
               },
             },
+          },
+        });
+
+        // 5. Automatically record ChairTimeline reservation
+        await transaction.chairTimeline.create({
+          data: {
+            salonId: salon.id,
+            resourceId: availableResource.id,
+            bookingId: createdBooking.id,
+            staffId: availableStaff.id,
+            state: ChairState.RESERVED,
           },
         });
 

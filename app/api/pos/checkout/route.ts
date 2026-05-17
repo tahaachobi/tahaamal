@@ -127,6 +127,8 @@ export async function POST(req: Request) {
         throw new Error("One or more services in the cart are no longer available");
       }
 
+      const invoiceNumber = `INV-${Date.now().toString().slice(-6)}`;
+
       const transactionRecord = await transactionClient.transaction.create({
         data: {
           sessionId: cashSession.id,
@@ -134,10 +136,33 @@ export async function POST(req: Request) {
           amount: totalAmount,
           invoice: {
             create: {
-              number: `INV-${Date.now().toString().slice(-6)}`,
+              number: invoiceNumber,
               totalAmount,
             },
           },
+        },
+      });
+
+      await transactionClient.auditLog.create({
+        data: {
+          action: "TRANSACTION_CREATED",
+          details: JSON.stringify({
+            transactionId: transactionRecord.id,
+            invoiceNumber,
+            paymentMethod,
+            totalAmount,
+            discountAmount,
+            cart: services.map((s) => ({
+              id: s.id,
+              name: s.name,
+              price: s.price,
+              quantity: cartQuantities[s.id] ?? 1,
+            })),
+          }),
+          entity: "Transaction",
+          entityId: transactionRecord.id,
+          salonId,
+          userId: context.userId,
         },
       });
 
